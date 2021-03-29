@@ -22,11 +22,11 @@ from utils.util_distortion import CenterPad, Normalize, RGB2Lab, ToTensor
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 torch.cuda.set_device(0)
-
+import pdb
 
 def colorize_video(opt, input_path, reference_file, output_path, nonlocal_net, colornet, vggnet):
     # parameters for wls filter
-    wls_filter_on = True
+    wls_filter_on = False
     lambda_value = 500
     sigma_color = 4
 
@@ -54,14 +54,18 @@ def colorize_video(opt, input_path, reference_file, output_path, nonlocal_net, c
 
     for iter_num, index in enumerate(range(file_count)):
         frame_name = filenames[index]
-        print("input =", frame_name)
-        print("reference =", ref_name)
+        print("input =", frame_name, "reference =", ref_name)
         frame1 = Image.open(os.path.join(input_path, frame_name))
 
         IA_lab_large = transform(frame1).unsqueeze(0).cuda()
         IB_lab_large = transform(frame_ref).unsqueeze(0).cuda()
         IA_lab = torch.nn.functional.interpolate(IA_lab_large, scale_factor=0.5, mode="bilinear")
         IB_lab = torch.nn.functional.interpolate(IB_lab_large, scale_factor=0.5, mode="bilinear")
+        # pdb.set_trace()
+        # IB_lab_large -- Lab Space, [-50.0, 50], ab in [-110, 110] ?
+        # (Pdb) IB_lab_large.size() -- torch.Size([1, 3, 432, 768])
+        # (Pdb) IB_lab_large[0][0].min().item(), IB_lab_large[0][0].max().item(), IB_lab_large[0][0].mean().item()
+        # (-47.176475524902344, 49.926780700683594, -7.818759441375732)
 
         IA_l = IA_lab[:, 0:1, :, :]
         IA_ab = IA_lab[:, 1:3, :, :]
@@ -80,11 +84,16 @@ def colorize_video(opt, input_path, reference_file, output_path, nonlocal_net, c
             I_reference_l = I_reference_lab[:, 0:1, :, :]
             I_reference_ab = I_reference_lab[:, 1:3, :, :]
             I_reference_rgb = tensor_lab2rgb(torch.cat((uncenter_l(I_reference_l), I_reference_ab), dim=1))
+            # pdb.set_trace()
+            # (Pdb) I_reference_rgb.min(), I_reference_rgb.max(), I_reference_rgb.mean()
+            # (tensor(0.0333, device='cuda:0'), tensor(1., device='cuda:0'), tensor(0.4136, device='cuda:0'))
 
             t_start = time.clock()
             torch.cuda.synchronize()
 
             features_B = vggnet(I_reference_rgb, ["r12", "r22", "r32", "r42", "r52"], preprocess=True)
+            pdb.set_trace()
+
             I_current_ab_predict, I_current_nonlocal_lab_predict, features_current_gray = frame_colorization(
                 I_current_lab,
                 I_reference_lab,
@@ -176,6 +185,9 @@ if __name__ == "__main__":
     vggnet.cuda()
 
     for ref_name in refs:
+        if not ref_name == '01.jpg':
+            continue
+            
         try:
             colorize_video(
                 opt,

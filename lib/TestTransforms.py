@@ -9,6 +9,7 @@ from PIL import Image
 from skimage import color
 
 import lib.functional as F
+import pdb
 
 __all__ = [
     "Compose",
@@ -165,6 +166,8 @@ class Normalize(object):
             err_ba = F.normalize(layer[0], 127, 2)  # [0, 255]
             err_ab = F.normalize(layer[1], 127, 2)  # [0, 255]
             layer_data.append([err_ba, err_ab])
+
+        pdb.set_trace()
 
         return layer_data
 

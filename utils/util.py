@@ -9,6 +9,7 @@ import torch
 import torchvision.utils as vutils
 from skimage import color, io
 from torch.autograd import Variable
+import pdb
 
 cv2.setNumThreads(0)
 
@@ -349,6 +350,10 @@ def vgg_preprocess(tensor):
     # output is BGR tensor which ranges in [0,255]
     tensor_bgr = torch.cat((tensor[:, 2:3, :, :], tensor[:, 1:2, :, :], tensor[:, 0:1, :, :]), dim=1)
     tensor_bgr_ml = tensor_bgr - torch.Tensor([0.40760392, 0.45795686, 0.48501961]).type_as(tensor_bgr).view(1, 3, 1, 1)
+    # pdb.set_trace()
+    # (Pdb) tensor_bgr_ml.min(), tensor_bgr_ml.max(), tensor_bgr_ml.mean()
+    # (tensor(-0.4389, device='cuda:0'), tensor(0.5924, device='cuda:0'), tensor(-0.0366, device='cuda:0'))
+        
     return tensor_bgr_ml * 255
 
 

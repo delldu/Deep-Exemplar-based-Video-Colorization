@@ -7,7 +7,7 @@ from torchvision import models as torch_models
 from utils.util import uncenter_l, vgg_preprocess
 
 from models.vgg19_gray import vgg19_gray, vgg19_gray_new
-
+import pdb
 
 def find_local_patch(x, patch_size):
     N, C, H, W = x.shape
@@ -229,9 +229,16 @@ class VGG19_feature_color_torchversion(nn.Module):
         """
         NOTE: input tensor should range in [0,1]
         """
+        # (Pdb) x.min(), x.max(), x.mean()
+        # (tensor(0.0333, device='cuda:0'), tensor(1., device='cuda:0'), tensor(0.4136, device='cuda:0'))
+
         out = {}
         if preprocess:
             x = vgg_preprocess(x)
+        # pdb.set_trace()
+        # (Pdb) x.min(), x.max(), x.mean()
+        # (tensor(-111.9249, device='cuda:0'), tensor(151.0610, device='cuda:0'), tensor(-9.3282, device='cuda:0'))
+
         out["r11"] = F.relu(self.conv1_1(x))
         out["r12"] = F.relu(self.conv1_2(out["r11"]))
         out["p1"] = self.pool1(out["r12"])
@@ -262,6 +269,7 @@ class VGG19_feature_color(nn.Module):
         # self.select = ['0', '5', '10', '19', '28']  # Select conv1_1 ~ conv5_1 activation maps.
         self.select = ["1", "6", "11", "20", "29"]  # Select relu1_1 ~ relu5_1 activation maps.
         self.vgg = torch_models.vgg19(pretrained=True).features
+        pdb.set_trace()
 
     def forward(self, x):
         """Extract multiple convolutional feature maps."""
