@@ -14,15 +14,11 @@
 # Thanks the authors
 # Hi Guys, I love you !!!
 
-import sys
 import torch
 import torch.nn as nn
-import torch.nn.parallel
 import torch.nn.functional as F
 
 from . import data
-
-# from data import lab2rgb
 
 import pdb
 
@@ -30,7 +26,7 @@ REFERENCE_RESIZE = 512
 
 
 def feature_normalize(feature_in):
-    feature_in_norm = torch.norm(feature_in, 2, 1, keepdim=True) + 1e-6  # sys.float_info.epsilon
+    feature_in_norm = torch.norm(feature_in, 2, 1, keepdim=True) + 1e-6
     feature_in_norm = torch.div(feature_in, feature_in_norm)
     return feature_in_norm
 
@@ -283,13 +279,13 @@ class GlobalWarpModel(nn.Module):
         # pairwise cosine similarity
         theta = self.theta(A_features).view(batch_size, self.inter_channels, -1)
         theta = theta - theta.mean(dim=-1, keepdim=True)  # center the feature
-        theta_norm = torch.norm(theta, 2, 1, keepdim=True) + 1e-6  # sys.float_info.epsilon
+        theta_norm = torch.norm(theta, 2, 1, keepdim=True) + 1e-6
         theta = torch.div(theta, theta_norm)
         theta_permute = theta.permute(0, 2, 1)
 
         phi = self.phi(B_features).view(batch_size, self.inter_channels, -1)
         phi = phi - phi.mean(dim=-1, keepdim=True)  # center the feature
-        phi_norm = torch.norm(phi, 2, 1, keepdim=True) + 1e-6  # sys.float_info.epsilon
+        phi_norm = torch.norm(phi, 2, 1, keepdim=True) + 1e-6
         phi = torch.div(phi, phi_norm)
         f = torch.matmul(theta_permute, phi)
 
@@ -515,7 +511,7 @@ class VideoColor(nn.Module):
         super(VideoColor, self).__init__()
         self.align = AlignModel()
         self.color = ColorModel()
-        self.RESIZE = REFERENCE_RESIZE
+        self.RESIZE = REFERENCE_RESIZE # 512
         self.A_last_lab = torch.zeros((1, 3, self.RESIZE, self.RESIZE))
 
     def forward(self, x, B_rgb):

@@ -25,8 +25,8 @@ import pdb
 
 def get_model():
     """Create model.
-        pre-trained model video_color.pth comes from
-        https://github.com/delldu/TorchScript.git/video_color
+    pre-trained model video_color.pth comes from
+    https://github.com/delldu/TorchScript.git/video_color
     """
 
     model_path = "models/video_color.pth"
@@ -55,14 +55,7 @@ def model_forward(model, device, input_tensor, reference_tensor, multi_times=1):
     if H % multi_times != 0 or W % multi_times != 0:
         input_tensor = todos.data.zeropad_tensor(input_tensor, times=multi_times)
 
-    input_tensor = input_tensor.to(device)
-    reference_tensor = reference_tensor.to(device)
-
-    torch.cuda.synchronize()
-    with torch.jit.optimized_execution(False):
-        with torch.no_grad():
-            output_tensor = model(input_tensor, reference_tensor)
-    torch.cuda.synchronize()
+    output_tensor = todos.model.two_forward(model, device, input_tensor, reference_tensor)
 
     return output_tensor[:, :, 0:H, 0:W]
 
