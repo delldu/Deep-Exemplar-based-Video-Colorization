@@ -511,10 +511,10 @@ class VideoColor(nn.Module):
         super(VideoColor, self).__init__()
         self.align = AlignModel()
         self.color = ColorModel()
-        self.RESIZE = REFERENCE_RESIZE # 512
+        self.RESIZE = REFERENCE_RESIZE  # 512
         self.A_last_lab = torch.zeros((1, 3, self.RESIZE, self.RESIZE))
 
-    def forward(self, x, B_rgb):
+    def forward_x(self, x, B_rgb):
         """x is video frame: 1x3xHxW, B_rgb is refenence 1x3x512x512"""
 
         H, W = B_rgb.size(2), B_rgb.size(3)
@@ -544,4 +544,37 @@ class VideoColor(nn.Module):
         output_lab = torch.cat((input_lab[:, 0:1, :, :], color_output_ab), dim=1)
         output_rgb = data.lab2rgb(output_lab)
 
-        return output_rgb
+        return output_rgb.clamp(0.0, 1.0)
+
+    def forward(self, x, B_rgb):
+        # Define max GPU/CPU memory -- 4G
+        max_h = 1024
+        max_W = 1024
+        multi_times = 2
+
+        # Need Resize ?
+        B, C, H, W = x.size()
+        if H > max_h or W > max_W:
+            s = min(max_h / H, max_W / W)
+            SH, SW = int(s * H), int(s * W)
+            resize_x = F.interpolate(x, size=(SH, SW), mode="bilinear", align_corners=False)
+        else:
+            resize_x = x
+
+        # Need Pad ?
+        PH, PW = resize_x.size(2), resize_x.size(3)
+        if PH % multi_times != 0 or PW % multi_times != 0:
+            r_pad = multi_times - (PW % multi_times)
+            b_pad = multi_times - (PH % multi_times)
+            resize_pad_x = F.pad(resize_x, (0, r_pad, 0, b_pad), mode="replicate")
+        else:
+            resize_pad_x = resize_x
+
+        y = self.forward_x(resize_pad_x, B_rgb)
+        del resize_pad_x, resize_x  # Release memory !!!
+
+        y = y[:, :, 0:PH, 0:PW]  # Remove Pads
+        if PH != H or PW != W:
+            y = F.interpolate(y, size=(H, W), mode="bilinear", align_corners=False)
+
+        return y

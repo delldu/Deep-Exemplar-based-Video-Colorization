@@ -49,17 +49,6 @@ def get_model():
     return model, device
 
 
-def model_forward(model, device, input_tensor, reference_tensor, multi_times=1):
-    # zeropad for model
-    H, W = input_tensor.size(2), input_tensor.size(3)
-    if H % multi_times != 0 or W % multi_times != 0:
-        input_tensor = todos.data.zeropad_tensor(input_tensor, times=multi_times)
-
-    output_tensor = todos.model.two_forward(model, device, input_tensor, reference_tensor)
-
-    return output_tensor[:, :, 0:H, 0:W]
-
-
 def video_predict(input_file, color_file, output_file):
     # load video
     video = redos.video.Reader(input_file)
@@ -88,7 +77,7 @@ def video_predict(input_file, color_file, output_file):
 
         # convert tensor from 1x4xHxW to 1x3xHxW
         input_tensor = input_tensor[:, 0:3, :, :]
-        output_rgb = model_forward(model, device, input_tensor, reference_tensor)
+        output_rgb = todos.model.two_forward(model, device, input_tensor, reference_tensor)
 
         # save the frames
         temp_output_file = "{}/{:06d}.png".format(output_dir, no + 1)
