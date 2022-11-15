@@ -23,18 +23,28 @@ from . import data, color
 import pdb
 
 
-def get_model():
+def get_tvm_model():
+    """
+    TVM model base on torch.jit.trace
+    """
+    model = color.VideoColor()
+    device = todos.model.get_device()
+    model = model.to(device)
+    model.eval()
+    print(f"Running tvm model model on {device} ...")
+
+    return model, device
+
+
+def get_color_model():
     """Create model.
     pre-trained model video_color.pth comes from
     https://github.com/delldu/TorchScript.git/video_color
     """
 
-    model_path = "models/video_color.pth"
-    cdir = os.path.dirname(__file__)
-    checkpoint = model_path if cdir == "" else cdir + "/" + model_path
-
     model = color.VideoColor()
-    todos.model.load(model, checkpoint)
+    model = todos.model.TwoResizePadModel(model)
+
     device = todos.model.get_device()
     model = model.to(device)
     model.eval()
@@ -61,7 +71,7 @@ def video_predict(input_file, color_file, output_file):
     todos.data.mkdir(output_dir)
 
     # load model
-    model, device = get_model()
+    model, device = get_color_model()
 
     # Reference
     reference_tensor = todos.data.load_tensor(color_file)

@@ -14,6 +14,7 @@
 # Thanks the authors
 # Hi Guys, I love you !!!
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -509,10 +510,22 @@ class ColorModel(nn.Module):
 class VideoColor(nn.Module):
     def __init__(self):
         super(VideoColor, self).__init__()
+        self.MAX_H = 1024
+        self.MAX_W = 2048
+        self.MAX_TIMES = 1
+        # GPU 4G, 150ms
+
         self.align = AlignModel()
         self.color = ColorModel()
         self.RESIZE = REFERENCE_RESIZE  # 512
         self.A_last_lab = torch.zeros((1, 3, self.RESIZE, self.RESIZE))
+
+        self.load_weights()
+
+    def load_weights(self, model_path="models/video_color.pth"):
+        cdir = os.path.dirname(__file__)
+        checkpoint = model_path if cdir == "" else cdir + "/" + model_path
+        self.load_state_dict(torch.load(checkpoint))
 
     def forward_x(self, x, B_rgb):
         """x is video frame: 1x3xHxW, B_rgb is refenence 1x3x512x512"""
